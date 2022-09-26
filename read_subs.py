@@ -15,6 +15,8 @@ class interval:
 			self.start_time = s
 			self.end_time = f
 		self.duration = self.end_time - self.start_time
+		# "real" intervals correspond to actual lines of dialog from the subtitle file
+		# "fake" intervals are inferred from gaps between dialog
 		self.type = type
 	def __str__(self):
 		return convert_to_timestamp(self.start_time) + ", " + convert_to_timestamp(self.end_time) + ", " + str(self.duration) + ", " + self.type
@@ -76,6 +78,9 @@ for i in range(len(intervals) - 1):
 		complete_intervals.append(new_interval)
 
 split_intervals = []
+# split into 1-second chunks:
+# - fake intervals longer than split length
+# - real intervals longer than max length
 for i in range(len(complete_intervals)):
 	if (complete_intervals[i].duration > split_length and complete_intervals[i].type == "fake") or (complete_intervals[i].duration > max_length and complete_intervals[i].type == "real"):
 		num_chunks = complete_intervals[i].duration // split_length + 1
@@ -94,6 +99,7 @@ for s in split_intervals:
 length = len(split_intervals)
 k = 0
 
+# greedily coalesce intervals together until they reach max_length
 while k < length - 2:
 	if split_intervals[k].duration + split_intervals[k + 1].duration < max_length:
 		new_interval = interval(split_intervals[k].start_time, split_intervals[k+1].end_time, "fake")
